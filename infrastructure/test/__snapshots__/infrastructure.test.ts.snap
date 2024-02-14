@@ -1,0 +1,2039 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Empty Stack 1`] = `
+{
+  "Outputs": {
+    "albdnsname": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "http://",
+            {
+              "Fn::GetAtt": [
+                "publicalb831B9254",
+                "DNSName",
+              ],
+            },
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "ClusterEB0386A7": {
+      "Type": "AWS::ECS::Cluster",
+    },
+    "backend1defaultsg14E5ABD4": {
+      "Properties": {
+        "GroupDescription": "MyTestStack/backend-1-default-sg",
+        "GroupName": "backend-1-fargate-service",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": "vpc-12345",
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "backend1defaultsgfromMyTestStackclient1defaultsgCCB598C73000B4A52AD1": {
+      "Properties": {
+        "Description": "from MyTestStackclient1defaultsgCCB598C7:3000",
+        "FromPort": 3000,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "backend1defaultsg14E5ABD4",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "client1defaultsgA7AE10F8",
+            "GroupId",
+          ],
+        },
+        "ToPort": 3000,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "backend1fargatetaskdefD211A6AA": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "DependsOn": [
+              {
+                "Condition": "HEALTHY",
+                "ContainerName": "envoy",
+              },
+            ],
+            "Environment": [
+              {
+                "Name": "PORT",
+                "Value": "3000",
+              },
+              {
+                "Name": "COLOR",
+                "Value": "red",
+              },
+            ],
+            "Essential": true,
+            "Image": {
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:b6cb013c89a8c064e815f1fee1b75cb72c8e973bfe849abc9784beb409f0beef",
+            },
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "backend1fargatetaskdefappLogGroupDE71C79F",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "backend-1-app-",
+              },
+            },
+            "Name": "app",
+            "PortMappings": [
+              {
+                "ContainerPort": 3000,
+                "HostPort": 3000,
+                "Protocol": "tcp",
+              },
+            ],
+          },
+          {
+            "Environment": [
+              {
+                "Name": "APPMESH_RESOURCE_ARN",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:appmesh:",
+                      {
+                        "Ref": "AWS::Region",
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId",
+                      },
+                      ":mesh/",
+                      {
+                        "Fn::GetAtt": [
+                          "meshACDFE68E",
+                          "MeshName",
+                        ],
+                      },
+                      "/virtualNode/backend-1-virtual-node",
+                    ],
+                  ],
+                },
+              },
+              {
+                "Name": "ENABLE_ENVOY_STATS_TAGS",
+                "Value": "1",
+              },
+              {
+                "Name": "ENABLE_ENVOY_XRAY_TRACING",
+                "Value": "1",
+              },
+              {
+                "Name": "ENVOY_LOG_LEVEL",
+                "Value": "debug",
+              },
+            ],
+            "Essential": true,
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "curl -s http://localhost:9901/server_info | grep state | grep -q LIVE",
+              ],
+              "Interval": 5,
+              "Retries": 3,
+              "StartPeriod": 10,
+              "Timeout": 2,
+            },
+            "Image": "public.ecr.aws/appmesh/aws-appmesh-envoy:v1.19.1.0-prod",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "backend1fargatetaskdefenvoyLogGroup640FA1AD",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "backend-1-envoy-",
+              },
+            },
+            "Name": "envoy",
+            "Ulimits": [
+              {
+                "HardLimit": 15000,
+                "Name": "nofile",
+                "SoftLimit": 15000,
+              },
+            ],
+            "User": "1337",
+          },
+          {
+            "Environment": [
+              {
+                "Name": "AWS_REGION",
+                "Value": {
+                  "Ref": "AWS::Region",
+                },
+              },
+            ],
+            "Essential": true,
+            "Image": "public.ecr.aws/xray/aws-xray-daemon:latest",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "backend1fargatetaskdefbackend1xrayLogGroup0BAA5FF3",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "backend-1-xray-",
+              },
+            },
+            "MemoryReservation": 256,
+            "Name": "backend-1-xray",
+            "PortMappings": [
+              {
+                "ContainerPort": 2000,
+                "Protocol": "udp",
+              },
+            ],
+            "User": "1337",
+          },
+        ],
+        "Cpu": "256",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "backend1fargatetaskdefExecutionRole80497264",
+            "Arn",
+          ],
+        },
+        "Family": "MyTestStackbackend1fargatetaskdef03D503F2",
+        "Memory": "1024",
+        "NetworkMode": "awsvpc",
+        "ProxyConfiguration": {
+          "ContainerName": "envoy",
+          "ProxyConfigurationProperties": [
+            {
+              "Name": "IgnoredUID",
+              "Value": "1337",
+            },
+            {
+              "Name": "AppPorts",
+              "Value": "3000",
+            },
+            {
+              "Name": "ProxyIngressPort",
+              "Value": "15000",
+            },
+            {
+              "Name": "ProxyEgressPort",
+              "Value": "15001",
+            },
+            {
+              "Name": "EgressIgnoredIPs",
+              "Value": "169.254.170.2,169.254.169.254",
+            },
+          ],
+          "Type": "APPMESH",
+        },
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "backend1fargatetaskdefTaskRoleDA7B36B4",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "backend1fargatetaskdefExecutionRole80497264": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "backend1fargatetaskdefExecutionRoleDefaultPolicy48E2F3E6": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":ecr:us-east-1:123456789012:repository/cdk-hnb659fds-container-assets-123456789012-us-east-1",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "backend1fargatetaskdefappLogGroupDE71C79F",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "backend1fargatetaskdefenvoyLogGroup640FA1AD",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "backend1fargatetaskdefbackend1xrayLogGroup0BAA5FF3",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "backend1fargatetaskdefExecutionRoleDefaultPolicy48E2F3E6",
+        "Roles": [
+          {
+            "Ref": "backend1fargatetaskdefExecutionRole80497264",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "backend1fargatetaskdefTaskRoleDA7B36B4": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/AWSXRayDaemonWriteAccess",
+              ],
+            ],
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/AWSAppMeshEnvoyAccess",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "backend1fargatetaskdefappLogGroupDE71C79F": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "backend1fargatetaskdefbackend1xrayLogGroup0BAA5FF3": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "backend1fargatetaskdefenvoyLogGroup640FA1AD": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "backend1serviceCloudmapServiceF5F70857": {
+      "DependsOn": [
+        "backend1fargatetaskdefTaskRoleDA7B36B4",
+      ],
+      "Properties": {
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "TTL": 60,
+              "Type": "SRV",
+            },
+          ],
+          "NamespaceId": {
+            "Fn::GetAtt": [
+              "testnamespace01FA2CAF",
+              "Id",
+            ],
+          },
+          "RoutingPolicy": "MULTIVALUE",
+        },
+        "HealthCheckCustomConfig": {
+          "FailureThreshold": 1,
+        },
+        "Name": "backend-1",
+        "NamespaceId": {
+          "Fn::GetAtt": [
+            "testnamespace01FA2CAF",
+            "Id",
+          ],
+        },
+      },
+      "Type": "AWS::ServiceDiscovery::Service",
+    },
+    "backend1serviceService05EE3AA8": {
+      "DependsOn": [
+        "backend1fargatetaskdefTaskRoleDA7B36B4",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "ClusterEB0386A7",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 0,
+        },
+        "DesiredCount": 1,
+        "EnableECSManagedTags": false,
+        "LaunchType": "FARGATE",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "ENABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "backend1defaultsg14E5ABD4",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": [
+              "s-12345",
+              "s-67890",
+            ],
+          },
+        },
+        "ServiceRegistries": [
+          {
+            "ContainerName": "app",
+            "ContainerPort": 3000,
+            "RegistryArn": {
+              "Fn::GetAtt": [
+                "backend1serviceCloudmapServiceF5F70857",
+                "Arn",
+              ],
+            },
+          },
+        ],
+        "TaskDefinition": {
+          "Ref": "backend1fargatetaskdefD211A6AA",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "backend1virtualnodeDA9CFD22": {
+      "Properties": {
+        "MeshName": {
+          "Fn::GetAtt": [
+            "meshACDFE68E",
+            "MeshName",
+          ],
+        },
+        "Spec": {
+          "Listeners": [
+            {
+              "ConnectionPool": {
+                "HTTP": {
+                  "MaxConnections": 1024,
+                  "MaxPendingRequests": 1024,
+                },
+              },
+              "HealthCheck": {
+                "HealthyThreshold": 2,
+                "IntervalMillis": 5000,
+                "Path": "health",
+                "Port": 3000,
+                "Protocol": "http",
+                "TimeoutMillis": 2000,
+                "UnhealthyThreshold": 2,
+              },
+              "PortMapping": {
+                "Port": 3000,
+                "Protocol": "http",
+              },
+            },
+          ],
+          "Logging": {
+            "AccessLog": {
+              "File": {
+                "Path": "/dev/stdout",
+              },
+            },
+          },
+          "ServiceDiscovery": {
+            "AWSCloudMap": {
+              "NamespaceName": "service.local",
+              "ServiceName": {
+                "Fn::GetAtt": [
+                  "backend1serviceCloudmapServiceF5F70857",
+                  "Name",
+                ],
+              },
+            },
+          },
+        },
+        "VirtualNodeName": "backend-1-virtual-node",
+      },
+      "Type": "AWS::AppMesh::VirtualNode",
+    },
+    "client1defaultsgA7AE10F8": {
+      "Properties": {
+        "GroupDescription": "MyTestStack/client-1-default-sg",
+        "GroupName": "client-1-fargate-service",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": "vpc-12345",
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "client1defaultsgfromMyTestStackingressdefaultsgD8DBDE4630002DD78D0C": {
+      "Properties": {
+        "Description": "from MyTestStackingressdefaultsgD8DBDE46:3000",
+        "FromPort": 3000,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "client1defaultsgA7AE10F8",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ingressdefaultsg91BB8A9C",
+            "GroupId",
+          ],
+        },
+        "ToPort": 3000,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "client1fargatetaskdefC82B22E6": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "DependsOn": [
+              {
+                "Condition": "HEALTHY",
+                "ContainerName": "envoy",
+              },
+            ],
+            "Environment": [
+              {
+                "Name": "PORT",
+                "Value": "3000",
+              },
+              {
+                "Name": "COLOR_BACKEND",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "http://",
+                      {
+                        "Fn::GetAtt": [
+                          "colorservice174C4434",
+                          "VirtualServiceName",
+                        ],
+                      },
+                      ":3000",
+                    ],
+                  ],
+                },
+              },
+              {
+                "Name": "VERSION",
+                "Value": "vanilla",
+              },
+            ],
+            "Essential": true,
+            "Image": {
+              "Fn::Sub": "123456789012.dkr.ecr.us-east-1.\${AWS::URLSuffix}/cdk-hnb659fds-container-assets-123456789012-us-east-1:bda89842d0963f013f4959736c92f178428548fbc9cfaf2ffd62315543c71692",
+            },
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "client1fargatetaskdefappLogGroupA6A04760",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "client-1-app-",
+              },
+            },
+            "Name": "app",
+            "PortMappings": [
+              {
+                "ContainerPort": 3000,
+                "HostPort": 3000,
+                "Protocol": "tcp",
+              },
+            ],
+          },
+          {
+            "Environment": [
+              {
+                "Name": "APPMESH_RESOURCE_ARN",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:appmesh:",
+                      {
+                        "Ref": "AWS::Region",
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId",
+                      },
+                      ":mesh/",
+                      {
+                        "Fn::GetAtt": [
+                          "meshACDFE68E",
+                          "MeshName",
+                        ],
+                      },
+                      "/virtualNode/client-1-virtual-node",
+                    ],
+                  ],
+                },
+              },
+              {
+                "Name": "ENABLE_ENVOY_STATS_TAGS",
+                "Value": "1",
+              },
+              {
+                "Name": "ENABLE_ENVOY_XRAY_TRACING",
+                "Value": "1",
+              },
+              {
+                "Name": "ENVOY_LOG_LEVEL",
+                "Value": "debug",
+              },
+            ],
+            "Essential": true,
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "curl -s http://localhost:9901/server_info | grep state | grep -q LIVE",
+              ],
+              "Interval": 5,
+              "Retries": 3,
+              "StartPeriod": 10,
+              "Timeout": 2,
+            },
+            "Image": "public.ecr.aws/appmesh/aws-appmesh-envoy:v1.19.1.0-prod",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "client1fargatetaskdefenvoyLogGroup323839D9",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "client-1-envoy-",
+              },
+            },
+            "Name": "envoy",
+            "Ulimits": [
+              {
+                "HardLimit": 15000,
+                "Name": "nofile",
+                "SoftLimit": 15000,
+              },
+            ],
+            "User": "1337",
+          },
+          {
+            "Environment": [
+              {
+                "Name": "AWS_REGION",
+                "Value": {
+                  "Ref": "AWS::Region",
+                },
+              },
+            ],
+            "Essential": true,
+            "Image": "public.ecr.aws/xray/aws-xray-daemon:latest",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "client1fargatetaskdefclient1xrayLogGroupD3AF2628",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "client-1-xray-",
+              },
+            },
+            "MemoryReservation": 256,
+            "Name": "client-1-xray",
+            "PortMappings": [
+              {
+                "ContainerPort": 2000,
+                "Protocol": "udp",
+              },
+            ],
+            "User": "1337",
+          },
+        ],
+        "Cpu": "256",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "client1fargatetaskdefExecutionRole90883195",
+            "Arn",
+          ],
+        },
+        "Family": "MyTestStackclient1fargatetaskdef17BE1882",
+        "Memory": "1024",
+        "NetworkMode": "awsvpc",
+        "ProxyConfiguration": {
+          "ContainerName": "envoy",
+          "ProxyConfigurationProperties": [
+            {
+              "Name": "IgnoredUID",
+              "Value": "1337",
+            },
+            {
+              "Name": "AppPorts",
+              "Value": "3000",
+            },
+            {
+              "Name": "ProxyIngressPort",
+              "Value": "15000",
+            },
+            {
+              "Name": "ProxyEgressPort",
+              "Value": "15001",
+            },
+            {
+              "Name": "EgressIgnoredIPs",
+              "Value": "169.254.170.2,169.254.169.254",
+            },
+          ],
+          "Type": "APPMESH",
+        },
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "client1fargatetaskdefTaskRole31577D20",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "client1fargatetaskdefExecutionRole90883195": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "client1fargatetaskdefExecutionRoleDefaultPolicy11641533": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":ecr:us-east-1:123456789012:repository/cdk-hnb659fds-container-assets-123456789012-us-east-1",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "client1fargatetaskdefappLogGroupA6A04760",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "client1fargatetaskdefenvoyLogGroup323839D9",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "client1fargatetaskdefclient1xrayLogGroupD3AF2628",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "client1fargatetaskdefExecutionRoleDefaultPolicy11641533",
+        "Roles": [
+          {
+            "Ref": "client1fargatetaskdefExecutionRole90883195",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "client1fargatetaskdefTaskRole31577D20": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/AWSXRayDaemonWriteAccess",
+              ],
+            ],
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/AWSAppMeshEnvoyAccess",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "client1fargatetaskdefappLogGroupA6A04760": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "client1fargatetaskdefclient1xrayLogGroupD3AF2628": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "client1fargatetaskdefenvoyLogGroup323839D9": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "client1serviceCloudmapService3EC23893": {
+      "DependsOn": [
+        "client1fargatetaskdefTaskRole31577D20",
+      ],
+      "Properties": {
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "TTL": 60,
+              "Type": "SRV",
+            },
+          ],
+          "NamespaceId": {
+            "Fn::GetAtt": [
+              "testnamespace01FA2CAF",
+              "Id",
+            ],
+          },
+          "RoutingPolicy": "MULTIVALUE",
+        },
+        "HealthCheckCustomConfig": {
+          "FailureThreshold": 1,
+        },
+        "Name": "client-1",
+        "NamespaceId": {
+          "Fn::GetAtt": [
+            "testnamespace01FA2CAF",
+            "Id",
+          ],
+        },
+      },
+      "Type": "AWS::ServiceDiscovery::Service",
+    },
+    "client1serviceServiceB258BF1F": {
+      "DependsOn": [
+        "client1fargatetaskdefTaskRole31577D20",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "ClusterEB0386A7",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 0,
+        },
+        "DesiredCount": 1,
+        "EnableECSManagedTags": false,
+        "LaunchType": "FARGATE",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "ENABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "client1defaultsgA7AE10F8",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": [
+              "s-12345",
+              "s-67890",
+            ],
+          },
+        },
+        "ServiceRegistries": [
+          {
+            "ContainerName": "app",
+            "ContainerPort": 3000,
+            "RegistryArn": {
+              "Fn::GetAtt": [
+                "client1serviceCloudmapService3EC23893",
+                "Arn",
+              ],
+            },
+          },
+        ],
+        "TaskDefinition": {
+          "Ref": "client1fargatetaskdefC82B22E6",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "client1virtualnodeD8190778": {
+      "Properties": {
+        "MeshName": {
+          "Fn::GetAtt": [
+            "meshACDFE68E",
+            "MeshName",
+          ],
+        },
+        "Spec": {
+          "Backends": [
+            {
+              "VirtualService": {
+                "VirtualServiceName": "color-service.service.local",
+              },
+            },
+          ],
+          "Listeners": [
+            {
+              "ConnectionPool": {
+                "HTTP": {
+                  "MaxConnections": 1024,
+                  "MaxPendingRequests": 1024,
+                },
+              },
+              "HealthCheck": {
+                "HealthyThreshold": 2,
+                "IntervalMillis": 5000,
+                "Path": "health",
+                "Port": 3000,
+                "Protocol": "http",
+                "TimeoutMillis": 2000,
+                "UnhealthyThreshold": 2,
+              },
+              "PortMapping": {
+                "Port": 3000,
+                "Protocol": "http",
+              },
+            },
+          ],
+          "Logging": {
+            "AccessLog": {
+              "File": {
+                "Path": "/dev/stdout",
+              },
+            },
+          },
+          "ServiceDiscovery": {
+            "AWSCloudMap": {
+              "NamespaceName": "service.local",
+              "ServiceName": {
+                "Fn::GetAtt": [
+                  "client1serviceCloudmapService3EC23893",
+                  "Name",
+                ],
+              },
+            },
+          },
+        },
+        "VirtualNodeName": "client-1-virtual-node",
+      },
+      "Type": "AWS::AppMesh::VirtualNode",
+    },
+    "clientservice096087CD": {
+      "Properties": {
+        "MeshName": {
+          "Fn::GetAtt": [
+            "meshACDFE68E",
+            "MeshName",
+          ],
+        },
+        "Spec": {
+          "Provider": {
+            "VirtualRouter": {
+              "VirtualRouterName": {
+                "Fn::GetAtt": [
+                  "clientservicevirtualrouter3D3CF978",
+                  "VirtualRouterName",
+                ],
+              },
+            },
+          },
+        },
+        "VirtualServiceName": "client-service.service.local",
+      },
+      "Type": "AWS::AppMesh::VirtualService",
+    },
+    "clientservicedummyservice21BCC83F": {
+      "Properties": {
+        "Description": "The dummy for App Mesh",
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "TTL": 60,
+              "Type": "A",
+            },
+          ],
+          "NamespaceId": {
+            "Fn::GetAtt": [
+              "testnamespace01FA2CAF",
+              "Id",
+            ],
+          },
+          "RoutingPolicy": "MULTIVALUE",
+        },
+        "Name": "client-service",
+        "NamespaceId": {
+          "Fn::GetAtt": [
+            "testnamespace01FA2CAF",
+            "Id",
+          ],
+        },
+      },
+      "Type": "AWS::ServiceDiscovery::Service",
+    },
+    "clientservicedummyservicedummyinstanceAD780EB2": {
+      "Properties": {
+        "InstanceAttributes": {
+          "AWS_INSTANCE_IPV4": "10.10.10.10",
+          "AWS_INSTANCE_PORT": "80",
+        },
+        "InstanceId": "MyTestStackclientservicedummyservicedummyinstance9279CBBB",
+        "ServiceId": {
+          "Fn::GetAtt": [
+            "clientservicedummyservice21BCC83F",
+            "Id",
+          ],
+        },
+      },
+      "Type": "AWS::ServiceDiscovery::Instance",
+    },
+    "clientservicevirtualrouter3D3CF978": {
+      "Properties": {
+        "MeshName": {
+          "Fn::GetAtt": [
+            "meshACDFE68E",
+            "MeshName",
+          ],
+        },
+        "Spec": {
+          "Listeners": [
+            {
+              "PortMapping": {
+                "Port": 3000,
+                "Protocol": "http",
+              },
+            },
+          ],
+        },
+        "VirtualRouterName": "MyTestStackclientservicevirtualrouter464B0D38",
+      },
+      "Type": "AWS::AppMesh::VirtualRouter",
+    },
+    "clientservicevirtualrouterdefaultE000E091": {
+      "Properties": {
+        "MeshName": {
+          "Fn::GetAtt": [
+            "meshACDFE68E",
+            "MeshName",
+          ],
+        },
+        "RouteName": "default",
+        "Spec": {
+          "HttpRoute": {
+            "Action": {
+              "WeightedTargets": [
+                {
+                  "VirtualNode": {
+                    "Fn::GetAtt": [
+                      "client1virtualnodeD8190778",
+                      "VirtualNodeName",
+                    ],
+                  },
+                  "Weight": 1,
+                },
+              ],
+            },
+            "Match": {
+              "Prefix": "/",
+            },
+          },
+        },
+        "VirtualRouterName": {
+          "Fn::GetAtt": [
+            "clientservicevirtualrouter3D3CF978",
+            "VirtualRouterName",
+          ],
+        },
+      },
+      "Type": "AWS::AppMesh::Route",
+    },
+    "clientvirtualrouterD89439AB": {
+      "Properties": {
+        "MeshName": {
+          "Fn::GetAtt": [
+            "meshACDFE68E",
+            "MeshName",
+          ],
+        },
+        "Spec": {
+          "Listeners": [
+            {
+              "PortMapping": {
+                "Port": 3000,
+                "Protocol": "http",
+              },
+            },
+          ],
+        },
+        "VirtualRouterName": "MyTestStackclientvirtualrouterD894D867",
+      },
+      "Type": "AWS::AppMesh::VirtualRouter",
+    },
+    "clientvirtualrouterdefault3F969BAD": {
+      "Properties": {
+        "MeshName": {
+          "Fn::GetAtt": [
+            "meshACDFE68E",
+            "MeshName",
+          ],
+        },
+        "RouteName": "default",
+        "Spec": {
+          "HttpRoute": {
+            "Action": {
+              "WeightedTargets": [
+                {
+                  "VirtualNode": {
+                    "Fn::GetAtt": [
+                      "client1virtualnodeD8190778",
+                      "VirtualNodeName",
+                    ],
+                  },
+                  "Weight": 1,
+                },
+              ],
+            },
+            "Match": {
+              "Prefix": "/",
+            },
+          },
+        },
+        "VirtualRouterName": {
+          "Fn::GetAtt": [
+            "clientvirtualrouterD89439AB",
+            "VirtualRouterName",
+          ],
+        },
+      },
+      "Type": "AWS::AppMesh::Route",
+    },
+    "colorservice174C4434": {
+      "Properties": {
+        "MeshName": {
+          "Fn::GetAtt": [
+            "meshACDFE68E",
+            "MeshName",
+          ],
+        },
+        "Spec": {
+          "Provider": {
+            "VirtualRouter": {
+              "VirtualRouterName": {
+                "Fn::GetAtt": [
+                  "colorservicevirtualrouter5958A7D2",
+                  "VirtualRouterName",
+                ],
+              },
+            },
+          },
+        },
+        "VirtualServiceName": "color-service.service.local",
+      },
+      "Type": "AWS::AppMesh::VirtualService",
+    },
+    "colorservicedummyservice1ACC4BD5": {
+      "Properties": {
+        "Description": "The dummy for App Mesh",
+        "DnsConfig": {
+          "DnsRecords": [
+            {
+              "TTL": 60,
+              "Type": "A",
+            },
+          ],
+          "NamespaceId": {
+            "Fn::GetAtt": [
+              "testnamespace01FA2CAF",
+              "Id",
+            ],
+          },
+          "RoutingPolicy": "MULTIVALUE",
+        },
+        "Name": "color-service",
+        "NamespaceId": {
+          "Fn::GetAtt": [
+            "testnamespace01FA2CAF",
+            "Id",
+          ],
+        },
+      },
+      "Type": "AWS::ServiceDiscovery::Service",
+    },
+    "colorservicedummyservicedummyinstance44A0218C": {
+      "Properties": {
+        "InstanceAttributes": {
+          "AWS_INSTANCE_IPV4": "10.10.10.10",
+          "AWS_INSTANCE_PORT": "80",
+        },
+        "InstanceId": "MyTestStackcolorservicedummyservicedummyinstanceB4F46759",
+        "ServiceId": {
+          "Fn::GetAtt": [
+            "colorservicedummyservice1ACC4BD5",
+            "Id",
+          ],
+        },
+      },
+      "Type": "AWS::ServiceDiscovery::Instance",
+    },
+    "colorservicevirtualrouter5958A7D2": {
+      "Properties": {
+        "MeshName": {
+          "Fn::GetAtt": [
+            "meshACDFE68E",
+            "MeshName",
+          ],
+        },
+        "Spec": {
+          "Listeners": [
+            {
+              "PortMapping": {
+                "Port": 3000,
+                "Protocol": "http",
+              },
+            },
+          ],
+        },
+        "VirtualRouterName": "MyTestStackcolorservicevirtualrouter6EEC90DC",
+      },
+      "Type": "AWS::AppMesh::VirtualRouter",
+    },
+    "colorservicevirtualrouterdefault9861F5B2": {
+      "Properties": {
+        "MeshName": {
+          "Fn::GetAtt": [
+            "meshACDFE68E",
+            "MeshName",
+          ],
+        },
+        "RouteName": "default",
+        "Spec": {
+          "HttpRoute": {
+            "Action": {
+              "WeightedTargets": [
+                {
+                  "VirtualNode": {
+                    "Fn::GetAtt": [
+                      "backend1virtualnodeDA9CFD22",
+                      "VirtualNodeName",
+                    ],
+                  },
+                  "Weight": 1,
+                },
+              ],
+            },
+            "Match": {
+              "Prefix": "/",
+            },
+          },
+        },
+        "VirtualRouterName": {
+          "Fn::GetAtt": [
+            "colorservicevirtualrouter5958A7D2",
+            "VirtualRouterName",
+          ],
+        },
+      },
+      "Type": "AWS::AppMesh::Route",
+    },
+    "ingressdefaultsg91BB8A9C": {
+      "Properties": {
+        "GroupDescription": "MyTestStack/ingress-default-sg",
+        "GroupName": "ingress-fargate-service",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": "vpc-12345",
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "ingressdefaultsgfromMyTestStackpublicalbSecurityGroupA46302CE808037A040BF": {
+      "Properties": {
+        "Description": "Load balancer to target",
+        "FromPort": 8080,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "ingressdefaultsg91BB8A9C",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "publicalbSecurityGroupBE904AB9",
+            "GroupId",
+          ],
+        },
+        "ToPort": 8080,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "ingressdefaultsgfromMyTestStackpublicalbSecurityGroupA46302CE9901ADAE526B": {
+      "Properties": {
+        "Description": "from MyTestStackpublicalbSecurityGroupA46302CE:9901",
+        "FromPort": 9901,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "ingressdefaultsg91BB8A9C",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "publicalbSecurityGroupBE904AB9",
+            "GroupId",
+          ],
+        },
+        "ToPort": 9901,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "ingressfargatetaskdef2ADAB92C": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Cpu": 208,
+            "Environment": [
+              {
+                "Name": "APPMESH_RESOURCE_ARN",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:appmesh:",
+                      {
+                        "Ref": "AWS::Region",
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId",
+                      },
+                      ":mesh/",
+                      {
+                        "Fn::GetAtt": [
+                          "meshACDFE68E",
+                          "MeshName",
+                        ],
+                      },
+                      "/virtualGateway/",
+                      {
+                        "Fn::GetAtt": [
+                          "virtualgatewayA390F3A3",
+                          "VirtualGatewayName",
+                        ],
+                      },
+                    ],
+                  ],
+                },
+              },
+              {
+                "Name": "AWS_REGION",
+                "Value": {
+                  "Ref": "AWS::Region",
+                },
+              },
+            ],
+            "Essential": true,
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "curl -s http://localhost:9901/server_info | grep state | grep -q LIVE || exit 1",
+              ],
+              "Interval": 5,
+              "Retries": 3,
+              "StartPeriod": 10,
+              "Timeout": 2,
+            },
+            "Image": "public.ecr.aws/appmesh/aws-appmesh-envoy:v1.19.1.0-prod",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "ingressfargatetaskdefappLogGroupC6DEF27D",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "ingress-app-",
+              },
+            },
+            "Memory": 320,
+            "Name": "app",
+            "PortMappings": [
+              {
+                "ContainerPort": 8080,
+                "Protocol": "tcp",
+              },
+              {
+                "ContainerPort": 9901,
+                "Protocol": "tcp",
+              },
+            ],
+            "Ulimits": [
+              {
+                "HardLimit": 1024000,
+                "Name": "nofile",
+                "SoftLimit": 1024000,
+              },
+            ],
+            "User": "1337",
+          },
+          {
+            "Environment": [
+              {
+                "Name": "AWS_REGION",
+                "Value": {
+                  "Ref": "AWS::Region",
+                },
+              },
+            ],
+            "Essential": true,
+            "Image": "public.ecr.aws/xray/aws-xray-daemon:latest",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "ingressfargatetaskdefingressxrayLogGroupE972E15F",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "ingress-xray-",
+              },
+            },
+            "MemoryReservation": 256,
+            "Name": "ingress-xray",
+            "PortMappings": [
+              {
+                "ContainerPort": 2000,
+                "Protocol": "udp",
+              },
+            ],
+            "User": "1337",
+          },
+        ],
+        "Cpu": "256",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "ingressfargatetaskdefExecutionRoleEB277C89",
+            "Arn",
+          ],
+        },
+        "Family": "MyTestStackingressfargatetaskdef9B55DA86",
+        "Memory": "512",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "ingressfargatetaskdefTaskRole7D2E4C4A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "ingressfargatetaskdefExecutionRoleDefaultPolicy7216DFC6": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ingressfargatetaskdefappLogGroupC6DEF27D",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ingressfargatetaskdefingressxrayLogGroupE972E15F",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ingressfargatetaskdefExecutionRoleDefaultPolicy7216DFC6",
+        "Roles": [
+          {
+            "Ref": "ingressfargatetaskdefExecutionRoleEB277C89",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ingressfargatetaskdefExecutionRoleEB277C89": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ingressfargatetaskdefTaskRole7D2E4C4A": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/AWSAppMeshEnvoyAccess",
+              ],
+            ],
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/AWSXRayDaemonWriteAccess",
+              ],
+            ],
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/CloudWatchAgentServerPolicy",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ingressfargatetaskdefappLogGroupC6DEF27D": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ingressfargatetaskdefingressxrayLogGroupE972E15F": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ingressserviceServiceB51D8374": {
+      "DependsOn": [
+        "ingressfargatetaskdefTaskRole7D2E4C4A",
+        "publicalbhttplisteneringressgatewaytargetGroup837DA0DB",
+        "publicalbhttplistener3244A15C",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "ClusterEB0386A7",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 0,
+        },
+        "DesiredCount": 1,
+        "EnableECSManagedTags": false,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LaunchType": "FARGATE",
+        "LoadBalancers": [
+          {
+            "ContainerName": "app",
+            "ContainerPort": 8080,
+            "TargetGroupArn": {
+              "Ref": "publicalbhttplisteneringressgatewaytargetGroup837DA0DB",
+            },
+          },
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "ENABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "ingressdefaultsg91BB8A9C",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": [
+              "s-12345",
+              "s-67890",
+            ],
+          },
+        },
+        "TaskDefinition": {
+          "Ref": "ingressfargatetaskdef2ADAB92C",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "meshACDFE68E": {
+      "Properties": {
+        "MeshName": "sample-mesh",
+        "Spec": {},
+      },
+      "Type": "AWS::AppMesh::Mesh",
+    },
+    "publicalb831B9254": {
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+        ],
+        "Scheme": "internet-facing",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "publicalbSecurityGroupBE904AB9",
+              "GroupId",
+            ],
+          },
+        ],
+        "Subnets": [
+          "s-12345",
+          "s-67890",
+        ],
+        "Type": "application",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "publicalbSecurityGroupBE904AB9": {
+      "Properties": {
+        "GroupDescription": "Automatically created Security Group for ELB MyTestStackpublicalbF5442238",
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow from anyone on port 80",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+        ],
+        "VpcId": "vpc-12345",
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "publicalbSecurityGrouptoMyTestStackingressdefaultsgD8DBDE4680800BF2FFF1": {
+      "Properties": {
+        "Description": "Load balancer to target",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ingressdefaultsg91BB8A9C",
+            "GroupId",
+          ],
+        },
+        "FromPort": 8080,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "publicalbSecurityGroupBE904AB9",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 8080,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "publicalbSecurityGrouptoMyTestStackingressdefaultsgD8DBDE46990154B60900": {
+      "Properties": {
+        "Description": "to MyTestStackingressdefaultsgD8DBDE46:9901",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ingressdefaultsg91BB8A9C",
+            "GroupId",
+          ],
+        },
+        "FromPort": 9901,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "publicalbSecurityGroupBE904AB9",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 9901,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "publicalbhttplistener3244A15C": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "publicalbhttplisteneringressgatewaytargetGroup837DA0DB",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "publicalb831B9254",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
+    "publicalbhttplisteneringressgatewaytargetGroup837DA0DB": {
+      "Properties": {
+        "HealthCheckIntervalSeconds": 10,
+        "HealthCheckPath": "/server_info",
+        "HealthCheckPort": "9901",
+        "HealthCheckProtocol": "HTTP",
+        "Port": 8080,
+        "Protocol": "HTTP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "deregistration_delay.timeout_seconds",
+            "Value": "0",
+          },
+          {
+            "Key": "stickiness.enabled",
+            "Value": "false",
+          },
+        ],
+        "TargetType": "ip",
+        "VpcId": "vpc-12345",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "testnamespace01FA2CAF": {
+      "Properties": {
+        "Name": "service.local",
+        "Vpc": "vpc-12345",
+      },
+      "Type": "AWS::ServiceDiscovery::PrivateDnsNamespace",
+    },
+    "virtualgatewayA390F3A3": {
+      "Properties": {
+        "MeshName": {
+          "Fn::GetAtt": [
+            "meshACDFE68E",
+            "MeshName",
+          ],
+        },
+        "Spec": {
+          "Listeners": [
+            {
+              "PortMapping": {
+                "Port": 8080,
+                "Protocol": "http",
+              },
+            },
+          ],
+        },
+        "VirtualGatewayName": "MyTestStackvirtualgateway45B65ADE",
+      },
+      "Type": "AWS::AppMesh::VirtualGateway",
+    },
+    "virtualgatewaywebrouteC4F0D027": {
+      "Properties": {
+        "GatewayRouteName": "MyTestStackvirtualgatewaywebroute6F18056D",
+        "MeshName": {
+          "Fn::GetAtt": [
+            "meshACDFE68E",
+            "MeshName",
+          ],
+        },
+        "Spec": {
+          "HttpRoute": {
+            "Action": {
+              "Target": {
+                "VirtualService": {
+                  "VirtualServiceName": {
+                    "Fn::GetAtt": [
+                      "clientservice096087CD",
+                      "VirtualServiceName",
+                    ],
+                  },
+                },
+              },
+            },
+            "Match": {
+              "Prefix": "/",
+            },
+          },
+        },
+        "VirtualGatewayName": {
+          "Fn::GetAtt": [
+            "virtualgatewayA390F3A3",
+            "VirtualGatewayName",
+          ],
+        },
+      },
+      "Type": "AWS::AppMesh::GatewayRoute",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

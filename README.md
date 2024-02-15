@@ -1,100 +1,134 @@
+# Updated information
+
+This is a modified version of Constantin's excellent work at that can be found at https://github.com/jaecktec/aws-cdk-appmesh-example/tree/final, which was the only functioning example of appmesh with CDK that I could find.
+
+I have made three main changes:
+
+- Upgraded it to CDK 2
+- Refactored the import statements to make dependencies explicit in the code, for readability
+- Updated the Envoy Docker image
+
+As with upstream, this code is licensed under MIT.
+
+Old Readme below
+
 # aws-cdk-appmesh-example
 
 code for the dev.to article: https://dev.to/jaecktec/aws-app-mesh-in-5-steps-1bmc
 
+### note:
 
-### note: 
 if you want to skip reading and just want to see the finished code visit my [GitHub](https://github.com/jaecktec/aws-cdk-appmesh-example/tree/final)
 
 ##prerequisites:
+
 - docker installed
 - node and npm installed
 - AWS account
 - a few spare bucks (AWS is not for free)
 
 ##Introduction:
+
 ### what's fargate
-I'm not copy-pasting the marketing description here. What is interesting in the end is how it affects your day-to-day job. 
-The most important features are: 
+
+I'm not copy-pasting the marketing description here. What is interesting in the end is how it affects your day-to-day job.
+The most important features are:
+
 - host your Docker images at ease
-- utilize AWS cloud-native features 
-- don't waste time in managing EC2 instances 
+- utilize AWS cloud-native features
+- don't waste time in managing EC2 instances
 - quick deployment and advanced rollout features when using [aws-code-deploy](https://aws.amazon.com/de/codedeploy/)
 
 ### what does a service mesh for you:
+
 A service mesh helps you with:
-- service discovery (routing between Microservices), 
+
+- service discovery (routing between Microservices),
 - streamlined logging and tracing between Microservices
-- help with resilience by routing traffic away from failed instances (usually you'd implement this with a load balancer). 
+- help with resilience by routing traffic away from failed instances (usually you'd implement this with a load balancer).
 - enables you to easily implement features like canary deployments and blue/green testing
 
 ### how does it do that?
-These features are archived by deploying a managed proxy alongside your application which intercepts traffic from and to your application. The proxy takes care of fetching the mesh configuration, routing the requests, and registering your instance to the mesh. The deployment is often referred to as 'sidecar' since you have one proxy per service instance. 
 
-### how is it supposed to work in amazon 
+These features are archived by deploying a managed proxy alongside your application which intercepts traffic from and to your application. The proxy takes care of fetching the mesh configuration, routing the requests, and registering your instance to the mesh. The deployment is often referred to as 'sidecar' since you have one proxy per service instance.
+
+### how is it supposed to work in amazon
+
 Amazon supports Service-Meshes by giving you access to a managed [envoy-proxy](https://www.envoyproxy.io/) hosting.  
-What you need to do: 
-- you deploy an envoy proxy as a side-car image next to your application container. 
+What you need to do:
+
+- you deploy an envoy proxy as a side-car image next to your application container.
 - you utilize the fargate-proxy config and reroute traffic to the envoy-proxy
-- you define virtual services/gateways/routes to stitch your mesh together  
+- you define virtual services/gateways/routes to stitch your mesh together
 
 ### terminology in AWS
+
 - **virtual node:** represents a compute instance like a fargate container
 - **virtual service:** represents a logical group (1..n) of nodes
 - **virtual route:** uses parameter (HTTP/GRPC) to route traffic to specific nodes/services
 - **virtual gateway:** specifies an incoming or outgoing gateway from app-mesh
 
-AWS Showcase: 
-![Aws showcase](https://d1.awsstatic.com/diagrams/image%20(9).c86b0113dde0d2dbdc99a1ffad59805d86b5cb82.png)
+AWS Showcase:
+![Aws showcase](<https://d1.awsstatic.com/diagrams/image%20(9).c86b0113dde0d2dbdc99a1ffad59805d86b5cb82.png>)
 
+### resources
 
-
-### resources 
 some great resources I used to build my service mesh are:
+
 - [What's a service mesh?](https://www.redhat.com/en/topics/microservices/what-is-a-service-mesh)
 - [AWS Cloud Containers Conference - Deep Dive on Configuring AWS App Mesh](https://youtu.be/qM4uf9l5lus)
 
-
-
 ## Step 1, preparation.
-I've prepared two microservices with a small react app that polls two endpoints. 
+
+I've prepared two microservices with a small react app that polls two endpoints.
 
 ![BFF Architecture](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/y7tkxtb17402noiyvevz.png)
 
 let's clone the GitHub repository
+
 ```
 git clone git@github.com:jaecktec/aws-cdk-appmesh-example.git
 cd aws-cdk-appmesh-example
 ```
 
 Quick walkthrough:
+
 ### infrastructure folder
-contains AWS CDK infrastructure such as: 
+
+contains AWS CDK infrastructure such as:
+
 - fargate cluster, services and task-defs
 - private DNS namespace
 - ALB
-used to host a small web app that accesses a non-exposed microservice through a gateway. 
+  used to host a small web app that accesses a non-exposed microservice through a gateway.
 
 ### services
+
 contains some microservices alongside Dockerfiles
 
 ### services/color-teller-backend
+
 rudimentary expressjs service which returns the environment variable 'COLOR' on [GET]/color and 200 on [GET]/health
 
 ### services/color-teller-client
-small react-app whith polls /gateway/color/color and /version and a expressjs services that exposes two endpoints, one /gateway/color/* which is a http-proxy to an endpoint defined in an env-variable called `COLOR_BACKEND` + a version endpoint which returns the env-variable called `VERSION`
 
+small react-app whith polls /gateway/color/color and /version and a expressjs services that exposes two endpoints, one /gateway/color/\* which is a http-proxy to an endpoint defined in an env-variable called `COLOR_BACKEND` + a version endpoint which returns the env-variable called `VERSION`
 
 ### test your prerequisites
+
 open the infrastructure folder:
+
 ```
 cd infrastructure
 ```
-and run 
+
+and run
+
 ```
 npm i
 npx cdk deploy
 ```
+
 this might take a few seconds, once you're asked to confirm, confirm by entering `y` and hit enter.
 
 once everything got deployed you should see an HTTP address, open this in the browser. If everything worked you should see a `Color Teller` showing `vanilla red`
@@ -110,16 +144,21 @@ npx cdk destroy
 Feel free to browse through the code but please don't judge me on the microservices, they were hacked together in a local coffee shop (not ⭐️🪣, I'm not that wealthy)
 
 ### Step 1: create mesh
-In our first step, we will create our `Mesh` and modify `createService` to accept and use the mesh. 
+
+In our first step, we will create our `Mesh` and modify `createService` to accept and use the mesh.
 
 before the first `createService` call add
+
 ```
 const mesh = new Mesh(this, 'mesh');
 ```
+
 this will create an app-mesh for us
 
 ### Step 2: create a virtual node
+
 now modify the signature of `createService` to accept a `Mesh` and return a `VirtualNode`:
+
 ```
 // ...
 private createService(
@@ -163,6 +202,7 @@ return {
 ```
 
 ### Step 3: attach an envoy-sidecar image
+
 in addition we need to add a new containerDefinition for the envoy-proxy. AWS provides the envoi-proxy image under region-specific paths, however, I chose to use the global image.
 A thing that is easy to miss: We need to add the managed policy `AWSAppMeshEnvoyAccess` to the taskRole
 
@@ -199,6 +239,7 @@ appContainer.addContainerDependencies({
 ```
 
 now we have our envoy-sidecar deployed. However, the traffic needs to be routed through the proxy so it can do its job. For that, we will add a `proxyConfiguration` to the `TaskDef`
+
 ```
 proxyConfiguration: new AppMeshProxyConfiguration({
   containerName: 'envoy',
@@ -213,7 +254,8 @@ proxyConfiguration: new AppMeshProxyConfiguration({
 ```
 
 ### Step 4: create virtual service
-In this step, we will create our virtual service and add some routing. *we could not have the router however, it enables you easily modify it to tinker around with routing*
+
+In this step, we will create our virtual service and add some routing. _we could not have the router however, it enables you easily modify it to tinker around with routing_
 
 ```
 private createVirtualService(
@@ -253,6 +295,7 @@ private createVirtualService(
 ```
 
 and call the method right after creating the `createService` invocation.
+
 ```
 // [...]
 const backendVService = this.createVirtualService('color-service', mesh, backendNode, namespace);
@@ -269,6 +312,7 @@ COLOR_BACKEND: `http://${backendVService.virtualServiceName}:${backendPort}`,
 
 and we need to tell the virtual node of the gateway service that we require to access the service
 (you also need to name the node attribute from the creteService function)
+
 ```
 // [...]
 const { service: clientFGService, port: appPort, node: clientNode } = this.createService(
@@ -279,17 +323,20 @@ clientNode.addBackend(Backend.virtualService(backendVService));
 ```
 
 now let's deploy the stack and check our result:
+
 ```
 npx cdk deploy
 ```
 
-The routing will be taken care of by app-mesh. Theoretically, we're done however, the ALB still directly routs the traffic to one of the microservices, so technically it is exposed (and we don't get normalized metrics for it). 
+The routing will be taken care of by app-mesh. Theoretically, we're done however, the ALB still directly routs the traffic to one of the microservices, so technically it is exposed (and we don't get normalized metrics for it).
 
 ### Step 5: create an ingress gateway
+
 In this step, we will deploy an envoy-proxy as the ingress gateway. We just need to deploy envoy-proxy as the main container, expose the application port (8080) and configure it as a `VirtualGateway`
 
-These are a lot of steps that are just a tutorial of deploying an app as a fargate-container. 
+These are a lot of steps that are just a tutorial of deploying an app as a fargate-container.
 Important here is:
+
 - taskRole needs managed policy `AWSAppMeshEnvoyAccess`
 - app port is 8080 however, the health check port is 9901. That means, we need to explicitly allow communication on 9901 between ALB and the APP
 - health url is /server_info (for ALB)
@@ -378,7 +425,7 @@ private createIngressService(
 }
 ```
 
-Lastly, we just need to remove the ALB ListenerTarget pointing to our clientService. The call of the function `createIngressService` will attach a ListenerTarget pointing to our gateway. 
+Lastly, we just need to remove the ALB ListenerTarget pointing to our clientService. The call of the function `createIngressService` will attach a ListenerTarget pointing to our gateway.
 
 for this we quickly create a virtual service for our clientService as well:
 
@@ -387,11 +434,13 @@ const clientVService = this.createVirtualService('client-service', mesh, clientN
 ```
 
 create the ingress service with our previously created method:
+
 ```
 const {gateway: virtualGateway, fgService: virtualGatewayFGService} = this.createIngressService(cluster, listener, mesh);
 ```
 
 and point the VirtualGateway to it:
+
 ```
 const clientVRouter = new VirtualRouter(this, 'client-virtual-router', {
   mesh,
@@ -418,9 +467,11 @@ virtualGateway.addGatewayRoute('web-route', {
 ```
 
 ### Bonus - AWS-X-Ray:
+
 using x-ray is very easy, we only need to deploy an x-ray sidecar image and enable envoy x-ray:
 
 First, let's modify both `createService` and `createIngressService` to deploy the x-ray sidecar image and grant XRay policies to the taskRole
+
 ```
 taskDef.addContainer(`${id}-xray`, {
   image: ContainerImage.fromRegistry('public.ecr.aws/xray/aws-xray-daemon:latest'),
@@ -439,7 +490,9 @@ taskDef.addContainer(`${id}-xray`, {
   } ],
 });
 ```
-and 
+
+and
+
 ```
 taskDef.addContainer(`ingress-xray`, {
   image: ContainerImage.fromRegistry('public.ecr.aws/xray/aws-xray-daemon:latest'),
@@ -461,17 +514,18 @@ taskDef.taskRole.addManagedPolicy(
   ManagedPolicy.fromAwsManagedPolicyName('AWSXRayDaemonWriteAccess'),
 );
 ```
+
 (note: only that the id property got replaced by a constant)
 
-now we need to enable x-ray on all the envoy containers by adding the env var `'ENABLE_ENVOY_XRAY_TRACING': '1'` to the envoy-sidecar image (right underneath `APPMESH_RESOURCE_ARN`) 
-
+now we need to enable x-ray on all the envoy containers by adding the env var `'ENABLE_ENVOY_XRAY_TRACING': '1'` to the envoy-sidecar image (right underneath `APPMESH_RESOURCE_ARN`)
 
 Finally, let's run
+
 ```
 npx cdk deploy
 ```
 
-Open the website and wait a minute. 
+Open the website and wait a minute.
 Now let's go to the [x-ray console](https://eu-west-1.console.aws.amazon.com/xray/home) and check the results:
 
 ![Alt Text](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/pues3ztoa50bu4682xjh.png)
@@ -479,11 +533,13 @@ Now let's go to the [x-ray console](https://eu-west-1.console.aws.amazon.com/xra
 ## What's next
 
 Now that you have your mesh configured: What can you do with it?
+
 ### First:
-You could deploy multiple instances (virtual nodes / fg services) and play around with the routing. 
-For example, you can route by cookie or play around with the weights and see what happens. 
 
-second: I intentionally put everything into one file, so it's easy to browse and to understand, but it screams for a refactoring :) 
+You could deploy multiple instances (virtual nodes / fg services) and play around with the routing.
+For example, you can route by cookie or play around with the weights and see what happens.
 
-third: 
-if you want to access a 3rd party API you can also add monitoring for that by providing a virtual service. I haven't tested this, however [the docs mention it](https://aws.amazon.com/blogs/containers/service-connectivity-inside-and-outside-the-mesh-using-aws-app-mesh-ecs-fargate/). 
+second: I intentionally put everything into one file, so it's easy to browse and to understand, but it screams for a refactoring :)
+
+third:
+if you want to access a 3rd party API you can also add monitoring for that by providing a virtual service. I haven't tested this, however [the docs mention it](https://aws.amazon.com/blogs/containers/service-connectivity-inside-and-outside-the-mesh-using-aws-app-mesh-ecs-fargate/).

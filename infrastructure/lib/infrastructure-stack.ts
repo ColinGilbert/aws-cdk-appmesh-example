@@ -135,8 +135,9 @@ export class InfrastructureStack extends cdk.Stack {
       ec2.Port.tcp(appPort)
     );
   }
-
   // End constructor
+
+  // Create service
 
   private createService(
     id: string,
@@ -294,6 +295,7 @@ export class InfrastructureStack extends cdk.Stack {
       node: bgNode,
     };
   }
+  // Create virtual service
 
   private createVirtualService(
     serviceName: string,
@@ -338,6 +340,7 @@ export class InfrastructureStack extends cdk.Stack {
     return service;
   }
 
+  // Create ingress service
   private createIngressService(
     cluster: ecs.Cluster,
     listener: elbv2.ApplicationListener,

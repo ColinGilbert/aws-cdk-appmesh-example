@@ -9,11 +9,15 @@ import * as path from "path";
 import { Construct } from "constructs";
 
 export class InfrastructureStack extends cdk.Stack {
+  envoyImageUri = "public.ecr.aws/appmesh/aws-appmesh-envoy:v1.27.2.0-prod";
+  xrayImageUri = "public.ecr.aws/xray/aws-xray-daemon:latest";
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     // fargate cluster
     const vpc = ec2.Vpc.fromLookup(this, "default-vpc", { isDefault: true });
+
     const cluster = new ecs.Cluster(this, "Cluster", {
       vpc: vpc,
     });
@@ -57,6 +61,7 @@ export class InfrastructureStack extends cdk.Stack {
         COLOR: "red",
       }
     );
+
     const backendVService = this.createVirtualService(
       "color-service",
       mesh,
@@ -130,6 +135,9 @@ export class InfrastructureStack extends cdk.Stack {
       ec2.Port.tcp(appPort)
     );
   }
+
+  // End constructor
+
   private createService(
     id: string,
     cluster: ecs.Cluster,
@@ -144,6 +152,7 @@ export class InfrastructureStack extends cdk.Stack {
     node: appmesh.VirtualNode;
   } {
     const appPort = 3000;
+
     const taskDef = new ecs.FargateTaskDefinition(
       this,
       `${id}-fargate-task-def`,
@@ -161,6 +170,7 @@ export class InfrastructureStack extends cdk.Stack {
         }),
       }
     );
+
     const appContainer = taskDef.addContainer("app", {
       image,
       logging: new ecs.AwsLogDriver({ streamPrefix: `${id}-app-` }),
@@ -170,11 +180,11 @@ export class InfrastructureStack extends cdk.Stack {
         ...envOverwrite,
       },
     });
+
     const virtualNodeName = `${id}-virtual-node`;
+
     const envoyContainer = taskDef.addContainer("envoy", {
-      image: ecs.ContainerImage.fromRegistry(
-        "public.ecr.aws/appmesh/aws-appmesh-envoy:v1.19.1.0-prod"
-      ),
+      image: ecs.ContainerImage.fromRegistry(this.envoyImageUri),
       essential: true,
       environment: {
         // https://docs.aws.amazon.com/app-mesh/latest/userguide/envoy-config.html
@@ -204,14 +214,13 @@ export class InfrastructureStack extends cdk.Stack {
       hardLimit: 15000,
       softLimit: 15000,
     });
+
     appContainer.addContainerDependencies({
       container: envoyContainer,
     });
 
     taskDef.addContainer(`${id}-xray`, {
-      image: ecs.ContainerImage.fromRegistry(
-        "public.ecr.aws/xray/aws-xray-daemon:latest"
-      ),
+      image: ecs.ContainerImage.fromRegistry(this.xrayImageUri),
       memoryReservationMiB: 256,
       environment: {
         AWS_REGION: cdk.Aws.REGION,
@@ -227,6 +236,7 @@ export class InfrastructureStack extends cdk.Stack {
         },
       ],
     });
+
     const service = new ecs.FargateService(this, `${id}-service`, {
       cluster,
       assignPublicIp: true, // for public vpc
@@ -272,9 +282,11 @@ export class InfrastructureStack extends cdk.Stack {
     taskDef.taskRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess")
     );
+
     taskDef.taskRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName("AWSAppMeshEnvoyAccess")
     );
+
     return {
       service,
       port: appPort,
@@ -314,6 +326,7 @@ export class InfrastructureStack extends cdk.Stack {
         appmesh.VirtualServiceProvider.virtualRouter(router),
       virtualServiceName: `${serviceName}.${namespace.namespaceName}`,
     });
+
     // https://docs.aws.amazon.com/app-mesh/latest/userguide/troubleshoot-connectivity.html#ts-connectivity-dns-resolution-virtual-service
     new cloudmap.Service(this, `${serviceName}-dummy-service`, {
       namespace,
@@ -334,6 +347,7 @@ export class InfrastructureStack extends cdk.Stack {
     fgService: ecs.FargateService;
   } {
     const port = 8080;
+
     const gateway = new appmesh.VirtualGateway(this, "virtual-gateway", {
       mesh,
       listeners: [appmesh.VirtualGatewayListener.http({ port })],
@@ -349,9 +363,7 @@ export class InfrastructureStack extends cdk.Stack {
 
     const container = taskDef.addContainer("app", {
       // most up-to-date envoy image at the point of writing the article
-      image: ecs.ContainerImage.fromRegistry(
-        "public.ecr.aws/appmesh/aws-appmesh-envoy:v1.19.1.0-prod"
-      ),
+      image: ecs.ContainerImage.fromRegistry(this.envoyImageUri),
       logging: new ecs.AwsLogDriver({ streamPrefix: "ingress-app-" }),
       portMappings: [
         { containerPort: port },
@@ -378,6 +390,7 @@ export class InfrastructureStack extends cdk.Stack {
       memoryLimitMiB: 320, // limit examples from the official docs
       cpu: 208, // limit examples from the official docs
     });
+
     // limit examples from the official docs
     container.addUlimits({
       name: ecs.UlimitName.NOFILE,
@@ -386,9 +399,7 @@ export class InfrastructureStack extends cdk.Stack {
     });
 
     taskDef.addContainer(`ingress-xray`, {
-      image: ecs.ContainerImage.fromRegistry(
-        "public.ecr.aws/xray/aws-xray-daemon:latest"
-      ),
+      image: ecs.ContainerImage.fromRegistry(this.xrayImageUri),
       memoryReservationMiB: 256,
       user: "1337",
       environment: {
@@ -419,6 +430,7 @@ export class InfrastructureStack extends cdk.Stack {
         }),
       ],
     });
+
     listener.addTargets("ingress-gateway-target", {
       port,
       protocol: elbv2.ApplicationProtocol.HTTP,
@@ -436,12 +448,15 @@ export class InfrastructureStack extends cdk.Stack {
 
     // required so the ALB can reach the health-check endpoint
     service.connections.allowFrom(listener, ec2.Port.tcp(9901));
+
     taskDef.taskRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName("AWSAppMeshEnvoyAccess")
     );
+
     taskDef.taskRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess")
     );
+
     taskDef.taskRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName("CloudWatchAgentServerPolicy")
     );

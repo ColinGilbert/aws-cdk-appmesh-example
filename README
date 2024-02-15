@@ -1,9 +1,0 @@
-This is a modified version of Constantin's excellent work at that can be found at https://github.com/jaecktec/aws-cdk-appmesh-example/tree/final, which was the only functioning example of appmesh with CDK that I could find.
-
-I have made three main changes:
-
-- Upgraded it to CDK 2
-- Refactored the import statements to make dependencies explicit in the code, for readability
-- Updated the Envoy Docker image
-
-As with upstream, this code is licensed under MIT.

@@ -1,22 +1,3 @@
-<<<<<<< HEAD
-import { Port, SecurityGroup, SubnetType, Vpc } from "aws-cdk-lib/aws-ec2";
-import {
-  AwsLogDriver,
-  Cluster,
-  ContainerImage,
-  FargateService,
-  FargateTaskDefinition,
-} from "aws-cdk-lib/aws-ecs";
-import {
-  ApplicationLoadBalancer,
-  ApplicationProtocol,
-  Protocol as ELBProtocol,
-} from "aws-cdk-lib/aws-elasticloadbalancingv2";
-import { PrivateDnsNamespace } from "aws-cdk-lib/aws-servicediscovery";
-import { CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
-import { resolve } from "path";
-import { Construct } from "constructs";
-=======
 import * as appmesh from "aws-cdk-lib/aws-appmesh";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as ecs from "aws-cdk-lib/aws-ecs";
@@ -30,27 +11,10 @@ import { Construct } from "constructs";
 export class InfrastructureStack extends cdk.Stack {
   envoyImageUri = "public.ecr.aws/appmesh/aws-appmesh-envoy:v1.27.2.0-prod";
   xrayImageUri = "public.ecr.aws/xray/aws-xray-daemon:latest";
->>>>>>> final
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-<<<<<<< HEAD
-    // fargate clusterø
-    const vpc = Vpc.fromLookup(this, "default-vpc", { isDefault: true });
-    const cluster = new Cluster(this, "Cluster", {
-      vpc: vpc,
-    });
-
-    const alb = new ApplicationLoadBalancer(this, "public-alb", {
-      vpc,
-      internetFacing: true,
-    });
-    new CfnOutput(this, "alb-dns-name", {
-      value: `http://${alb.loadBalancerDnsName}`,
-    });
-
-=======
     // fargate cluster
     const vpc = ec2.Vpc.fromLookup(this, "default-vpc", { isDefault: true });
 
@@ -67,32 +31,16 @@ export class InfrastructureStack extends cdk.Stack {
       value: `http://${alb.loadBalancerDnsName}`,
     });
 
->>>>>>> final
     const listener = alb.addListener("http-listener", {
       port: 80,
       protocol: elbv2.ApplicationProtocol.HTTP,
     });
 
-<<<<<<< HEAD
-    const namespace = new PrivateDnsNamespace(this, "test-namespace", {
-=======
     const namespace = new cloudmap.PrivateDnsNamespace(this, "test-namespace", {
->>>>>>> final
       vpc,
       name: "service.local",
     });
 
-<<<<<<< HEAD
-    const {
-      service: backendFGService,
-      privateDnsName: backendDnsName,
-      port: backendPort,
-    } = this.createService(
-      "backend-1",
-      cluster,
-      ContainerImage.fromAsset(
-        resolve(__dirname, "..", "..", "services", "color-teller-backend")
-=======
     const mesh = new appmesh.Mesh(this, "mesh", {
       meshName: "sample-mesh",
     });
@@ -106,7 +54,6 @@ export class InfrastructureStack extends cdk.Stack {
       cluster,
       ecs.ContainerImage.fromAsset(
         path.resolve(__dirname, "..", "..", "services", "color-teller-backend")
->>>>>>> final
       ),
       namespace,
       mesh,
@@ -115,31 +62,6 @@ export class InfrastructureStack extends cdk.Stack {
       }
     );
 
-<<<<<<< HEAD
-    const { service: clientFGService, port: appPort } = this.createService(
-      "client-1",
-      cluster,
-      ContainerImage.fromAsset(
-        resolve(__dirname, "..", "..", "services", "color-teller-client")
-      ),
-      namespace,
-      {
-        COLOR_BACKEND: `http://${backendDnsName}:${backendPort}`,
-        VERSION: "vanilla",
-      }
-    );
-
-    listener.addTargets("default", {
-      port: appPort,
-      protocol: ApplicationProtocol.HTTP,
-      healthCheck: {
-        protocol: ELBProtocol.HTTP,
-        interval: Duration.seconds(10),
-        port: `${appPort}`,
-        path: "/health",
-      },
-      targets: [clientFGService],
-=======
     const backendVService = this.createVirtualService(
       "color-service",
       mesh,
@@ -198,7 +120,6 @@ export class InfrastructureStack extends cdk.Stack {
           },
         ],
       }),
->>>>>>> final
     });
 
     virtualGateway.addGatewayRoute("web-route", {
@@ -220,16 +141,6 @@ export class InfrastructureStack extends cdk.Stack {
 
   private createService(
     id: string,
-<<<<<<< HEAD
-    cluster: Cluster,
-    image: ContainerImage,
-    namespace: PrivateDnsNamespace,
-    envOverwrite: { [key: string]: string } = {}
-  ): {
-    service: FargateService;
-    port: number;
-    privateDnsName: string;
-=======
     cluster: ecs.Cluster,
     image: ecs.ContainerImage,
     namespace: cloudmap.PrivateDnsNamespace,
@@ -240,15 +151,8 @@ export class InfrastructureStack extends cdk.Stack {
     port: number;
     privateDnsName: string;
     node: appmesh.VirtualNode;
->>>>>>> final
   } {
     const appPort = 3000;
-<<<<<<< HEAD
-    taskDef.addContainer(`${id}-app`, {
-      image,
-      logging: new AwsLogDriver({ streamPrefix: `${id}-app-` }),
-      portMappings: [{ containerPort: appPort }],
-=======
 
     const taskDef = new ecs.FargateTaskDefinition(
       this,
@@ -272,7 +176,6 @@ export class InfrastructureStack extends cdk.Stack {
       image,
       logging: new ecs.AwsLogDriver({ streamPrefix: `${id}-app-` }),
       portMappings: [{ containerPort: appPort, hostPort: appPort }],
->>>>>>> final
       environment: {
         PORT: `${appPort}`,
         ...envOverwrite,
@@ -341,15 +244,9 @@ export class InfrastructureStack extends cdk.Stack {
       minHealthyPercent: 0, // for zero downtime rolling deployment set desiredcount=2 and minHealty = 50
       desiredCount: 1,
       taskDefinition: taskDef,
-<<<<<<< HEAD
-      vpcSubnets: { subnetType: SubnetType.PUBLIC },
-      securityGroups: [
-        new SecurityGroup(this, `${id}-default-sg`, {
-=======
       vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
       securityGroups: [
         new ec2.SecurityGroup(this, `${id}-default-sg`, {
->>>>>>> final
           securityGroupName: `${id}-fargate-service`,
           vpc: cluster.vpc,
         }),
@@ -395,9 +292,6 @@ export class InfrastructureStack extends cdk.Stack {
       service,
       port: appPort,
       privateDnsName: `${id}.${namespace.namespaceName}`,
-<<<<<<< HEAD
-    };
-=======
       node: bgNode,
     };
   }
@@ -571,6 +465,5 @@ export class InfrastructureStack extends cdk.Stack {
     );
 
     return { gateway, fgService: service };
->>>>>>> final
   }
 }
